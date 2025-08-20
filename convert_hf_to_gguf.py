@@ -881,6 +881,9 @@ class TextModel(ModelBase):
         if chkhsh == "a1e163ecab2e718a4c829d1148b6e86824ec36163bb71941c3dca9cd5ac25756":
             # ref: https://huggingface.co/JetBrains/Mellum-4b-base
             res = "mellum"
+        if chkhsh == "a232e0f0978ca952ab8dddb5c271f5af0340524d7cdde1eebf5da12af3c14296":
+            # ref: https://huggingface.co/trillionlabs/Tri-70B-preview-SFT
+            res = "tri"
 
         if res is None:
             logger.warning("\n")
@@ -8453,6 +8456,19 @@ class MistralModel(LlamaModel):
             template = f.read()
 
         return template
+
+
+@ModelBase.register("TriForCausalLM", "TriModel")
+class TriModel(TextModel):
+    model_arch = gguf.MODEL_ARCH.TRI
+
+    def set_gguf_parameters(self):
+        super().set_gguf_parameters()
+        rope_scaling = self.hparams.get("rope_scaling") or {}
+        if rope_scaling.get("rope_type", rope_scaling.get("type")) == "yarn" and "factor" in rope_scaling:
+            self.gguf_writer.add_rope_scaling_type(gguf.RopeScalingType.YARN)
+            self.gguf_writer.add_rope_scaling_factor(rope_scaling["factor"])
+            self.gguf_writer.add_rope_scaling_orig_ctx_len(rope_scaling["original_max_position_embeddings"])
 
 
 class PixtralModel(LlavaVisionModel):
